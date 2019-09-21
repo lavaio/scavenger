@@ -61,6 +61,7 @@ cfg_if! {
 }
 
 pub fn create_cpu_worker_task(
+    owner_address: String,
     benchmark: bool,
     thread_pool: rayon::ThreadPool,
     rx_read_replies: Receiver<ReadReply>,
@@ -70,6 +71,7 @@ pub fn create_cpu_worker_task(
     move || {
         for read_reply in rx_read_replies {
             let task = hash(
+                owner_address.clone(),
                 read_reply,
                 tx_empty_buffers.clone(),
                 tx_nonce_data.clone(),
@@ -82,6 +84,7 @@ pub fn create_cpu_worker_task(
 }
 
 pub fn hash(
+    owner_address: String,
     read_reply: ReadReply,
     tx_empty_buffers: Sender<Box<Buffer + Send>>,
     tx_nonce_data: mpsc::Sender<NonceData>,
@@ -103,7 +106,8 @@ pub fn hash(
                         deadline,
                         nonce: 0,
                         reader_task_processed: read_reply.info.finished,
-                        account_id: read_reply.info.account_id,
+                        address: owner_address,
+                        // address: read_reply.info.address,
                     })
                     .wait()
                     .expect("CPU worker failed to send nonce data");
@@ -216,7 +220,7 @@ pub fn hash(
                 deadline,
                 nonce: offset + read_reply.info.start_nonce,
                 reader_task_processed: read_reply.info.finished,
-                account_id: read_reply.info.account_id,
+                address: owner_address,
             })
             .wait()
             .expect("CPU worker failed to send nonce data");

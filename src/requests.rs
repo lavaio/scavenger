@@ -73,17 +73,16 @@ impl RequestHandler {
                     .then(move |res| {
                         match res {
                             Ok(res) => {
-                                if submission_params.deadline != res.deadline {
+                                if res.result.accept == Some(false) || res.result.deadline != Some(submission_params.deadline){
                                     log_deadline_mismatch(
                                         submission_params.height,
-                                        submission_params.account_id,
+                                        submission_params.address,
                                         submission_params.nonce,
                                         submission_params.deadline,
-                                        res.deadline,
                                     );
                                 } else {
                                     log_submission_accepted(
-                                        submission_params.account_id,
+                                        submission_params.address,
                                         submission_params.nonce,
                                         submission_params.deadline,
                                     );
@@ -94,7 +93,7 @@ impl RequestHandler {
                                 // experiencing too much load expect the submission to be resent later.
                                 if e.message.is_empty() || e.message == "limit exceeded" {
                                     log_pool_busy(
-                                        submission_params.account_id,
+                                        submission_params.address.clone(),
                                         submission_params.nonce,
                                         submission_params.deadline,
                                     );
@@ -105,7 +104,7 @@ impl RequestHandler {
                                 } else {
                                     log_submission_not_accepted(
                                         submission_params.height,
-                                        submission_params.account_id,
+                                        submission_params.address,
                                         submission_params.nonce,
                                         submission_params.deadline,
                                         e.code,
@@ -115,7 +114,7 @@ impl RequestHandler {
                             }
                             Err(FetchError::Http(x)) => {
                                 log_submission_failed(
-                                    submission_params.account_id,
+                                    submission_params.address.clone(),
                                     submission_params.nonce,
                                     submission_params.deadline,
                                     x.description(),
@@ -140,21 +139,17 @@ impl RequestHandler {
 
     pub fn submit_nonce(
         &self,
-        account_id: u64,
+        account: String,
         nonce: u64,
-        height: u64,
-        block: u64,
-        deadline_unadjusted: u64,
         deadline: u64,
+        height: u64,
         gen_sig: [u8; 32],
     ) {
         let res = self.tx_submit_data.unbounded_send(SubmissionParameters {
-            account_id,
+            address: account,
             nonce,
-            height,
-            block,
-            deadline_unadjusted,
             deadline,
+            height,
             gen_sig,
         });
         if let Err(e) = res {
@@ -165,31 +160,30 @@ impl RequestHandler {
 
 fn log_deadline_mismatch(
     height: u64,
-    account_id: u64,
+    address: String,
     nonce: u64,
     deadline: u64,
-    deadline_pool: u64,
 ) {
     error!(
         "submit: deadlines mismatch, height={}, account={}, nonce={}, \
-         deadline_miner={}, deadline_pool={}",
-        height, account_id, nonce, deadline, deadline_pool
+         deadline_miner={}",
+        height, address, nonce, deadline
     );
 }
 
-fn log_submission_failed(account_id: u64, nonce: u64, deadline: u64, err: &str) {
+fn log_submission_failed(account: String, nonce: u64, deadline: u64, err: &str) {
     warn!(
         "{: <80}",
         format!(
             "submission failed, retrying: account={}, nonce={}, deadline={}, description={}",
-            account_id, nonce, deadline, err
+            account, nonce, deadline, err
         )
     );
 }
 
 fn log_submission_not_accepted(
     height: u64,
-    account_id: u64,
+    account_id: String,
     nonce: u64,
     deadline: u64,
     err_code: i32,
@@ -202,14 +196,14 @@ fn log_submission_not_accepted(
     );
 }
 
-fn log_submission_accepted(account_id: u64, nonce: u64, deadline: u64) {
+fn log_submission_accepted(account_id: String, nonce: u64, deadline: u64) {
     info!(
         "deadline accepted: account={}, nonce={}, deadline={}",
         account_id, nonce, deadline
     );
 }
 
-fn log_pool_busy(account_id: u64, nonce: u64, deadline: u64) {
+fn log_pool_busy(account_id: String, nonce: u64, deadline: u64) {
     info!(
         "pool busy, retrying: account={}, nonce={}, deadline={}",
         account_id, nonce, deadline

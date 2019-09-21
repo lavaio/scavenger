@@ -21,15 +21,18 @@ pub struct BufferInfo {
     pub start_nonce: u64,
     pub finished: bool,
     pub account_id: u64,
+    // pub address: String,
     pub gpu_signal: u64,
 }
 pub struct ReadReply {
+    // pub address: String,
     pub buffer: Box<Buffer + Send>,
     pub info: BufferInfo,
 }
 
 #[allow(dead_code)]
 pub struct Reader {
+    pub address: String,
     drive_id_to_plots: HashMap<String, Arc<Vec<Mutex<Plot>>>>,
     pub total_size: u64,
     pool: rayon::ThreadPool,
@@ -44,6 +47,7 @@ pub struct Reader {
 
 impl Reader {
     pub fn new(
+        address: String,
         drive_id_to_plots: HashMap<String, Arc<Vec<Mutex<Plot>>>>,
         total_size: u64,
         num_threads: usize,
@@ -61,6 +65,7 @@ impl Reader {
         }
 
         Reader {
+            address,
             drive_id_to_plots,
             total_size,
             pool: new_thread_pool(num_threads, thread_pinning),

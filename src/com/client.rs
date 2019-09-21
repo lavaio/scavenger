@@ -24,12 +24,11 @@ pub struct Client {
 /// Parameters ussed for nonce submission.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct SubmissionParameters {
-    pub account_id: u64,
+    pub address: String,
     pub nonce: u64,
-    pub height: u64,
-    pub block: u64,
-    pub deadline_unadjusted: u64,
     pub deadline: u64,
+    pub height: u64,
+    // pub deadline: u64,
     pub gen_sig: [u8; 32],
 }
 
@@ -39,9 +38,9 @@ pub struct SubmissionParameters {
 /// parameters the old ones need to be replaced.
 impl Ord for SubmissionParameters {
     fn cmp(&self, other: &Self) -> Ordering {
-        if self.block < other.block {
+        if self.height < other.height {
             Ordering::Less
-        } else if self.block > other.block {
+        } else if self.height > other.height {
             Ordering::Greater
         } else if self.gen_sig == other.gen_sig {
             // on the same chain, best deadline wins
@@ -87,6 +86,7 @@ impl Client {
         headers.insert("User-Agent", ua.to_owned().parse().unwrap());
         if proxy_details == ProxyDetails::Enabled {
             // It's amazing how a user agent is just not enough.
+            headers.insert("Authorization", "Basic dGVzdDp0ZXN0".parse().unwrap());
             headers.insert("X-Capacity", total_size_gb.to_string().parse().unwrap());
             headers.insert("X-Miner", ua.to_owned().parse().unwrap());
             headers.insert(
@@ -145,12 +145,15 @@ impl Client {
 
     /// Get current mining info.
     pub fn get_mining_info(&self) -> impl Future<Item = MiningInfoResponse, Error = FetchError> {
+        let mut map = HashMap::new();
+        map.insert("jsonrpc", "1.0");
+        map.insert("id", "scavenger");
+        map.insert("method", "getmininginfo");
+
         self.inner
-            .get(self.uri_for("burst"))
+            .post(self.uri_forlava())
             .headers((*self.headers).clone())
-            .query(&GetMiningInfoRequest {
-                request_type: &"getMiningInfo",
-            })
+            .json(&map)
             .send()
             .and_then(|mut res| {
                 let body = mem::replace(res.body_mut(), Decoder::empty());
@@ -158,7 +161,10 @@ impl Client {
             })
             .from_err::<FetchError>()
             .and_then(|body| match parse_json_result(&body) {
-                Ok(x) => Ok(x),
+                Ok(x) => {
+                    info!("got mininginfo: {:?}", x);
+                    Ok(x)
+                },
                 Err(e) => Err(e.into()),
             })
     }
@@ -173,47 +179,55 @@ impl Client {
         url
     }
 
+    pub fn uri_forlava(&self) -> Url {
+        let mut url = self.base_uri.clone();
+        url.path_segments_mut()
+           .map_err(|_| "cannot be base")
+           .unwrap()
+           .pop_if_empty();
+        url
+    }
+
     /// Submit nonce to the pool and get the corresponding deadline.
     pub fn submit_nonce(
         &self,
         submission_data: &SubmissionParameters,
     ) -> impl Future<Item = SubmitNonceResponse, Error = FetchError> {
-        let secret_phrase = self
-            .account_id_to_secret_phrase
-            .get(&submission_data.account_id);
+        // let secret_phrase = self
+          //  .account_id_to_secret_phrase
+           // .get(&submission_data.address);
 
         // If we don't have a secret phrase then we most likely talk to a pool or a proxy.
         // Both can make use of the deadline, e.g. a proxy won't validate deadlines but still
         // needs to rank the deadlines.
         // The best thing is that legacy proxies use the unadjusted deadlines so...
         // yay another parameter!
-        let deadline = if secret_phrase.is_none() {
-            Some(submission_data.deadline_unadjusted)
-        } else {
-            None
-        };
+        let deadline = Some(submission_data.deadline);
 
-        let query = SubmitNonceRequest {
-            request_type: &"submitNonce",
-            account_id: submission_data.account_id,
-            nonce: submission_data.nonce,
-            secret_phrase,
-            blockheight: submission_data.height,
-            deadline,
+        let data = SubmitNonceRequest {
+            jsonrpc: "1.0".to_string(),
+            method: "submitnonce".to_string(),
+            id: "scavenger".to_string(),
+            params: Some(SubmitNonceParams(
+                submission_data.address.clone(),
+                submission_data.nonce.to_string(),
+                deadline,
+                submission_data.height)),
+            // account_id: submission_data.account_id,
+            // nonce: submission_data.nonce,
+            // secret_phrase,
+            // blockheight: submission_data.height,
+            // deadline,
         };
 
         // Some "Extrawurst" for the CreepMiner proxy (I think?) which needs the deadline inside
         // the "X-Deadline" header.
-        let mut headers = (*self.headers).clone();
-        headers.insert(
-            "X-Deadline",
-            submission_data.deadline.to_string().parse().unwrap(),
-        );
+        let headers = (*self.headers).clone();
 
         self.inner
-            .post(self.uri_for("burst"))
+            .post(self.uri_forlava())
             .headers(headers)
-            .query(&query)
+            .json(&data)
             .send()
             .and_then(|mut res| {
                 let body = mem::replace(res.body_mut(), Decoder::empty());

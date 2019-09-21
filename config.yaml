@@ -1,9 +1,9 @@
 # PLEASE ONLY ENTER YOUR PASSPHRASE BELOW IF YOU ARE GOING TO MINE SOLO!
 # YOU DO NOT NEED TO ENTER YOUR PASSPHRASE FOR POOL MINING.
 # NEVER POST YOUR CONFIG.YAML INCLUDING YOUR PASSPHRASE TO ANY BOARD OR CHAT!
-account_id_to_secret_phrase:                   # define accounts and passphrases for solo mining 
-  10282355196851764065: 'glad suffer red during single glow shut slam hill death lust although'          # Bold's example wallet
-  1796535821016683299: 'stand rude those door invite reflection anywhere lace safe hidden fur horrible'  # Johnny's example wallet
+# account_id_to_secret_phrase:                   # define accounts and passphrases for solo mining
+#  10282355196851764065: 'glad suffer red during single glow shut slam hill death lust although'          # Bold's example wallet
+#  1796535821016683299: 'stand rude those door invite reflection anywhere lace safe hidden fur horrible'  # Johnny's example wallet
 
 plot_dirs:
    - 'test_data'
@@ -11,7 +11,7 @@ plot_dirs:
 #  - '/first/linux/plot/dir'
 #  - '/second/linux/plot/dir'
 
-url: 'http://50-50-pool.burst.cryptoguru.org:8124'  # cryptoguru 50-50 pool
+url: 'http://127.0.0.1:8332'  # cryptoguru 50-50 pool
 #url: 'http://dummypool.megash.it'                  # dummypool with constant scoop number for benchmarking
 
 hdd_reader_thread_count: 0            # default 0 (=auto: number of disks)
@@ -54,6 +54,8 @@ benchmark_only: 'disabled'            # default disabled, options (disabled, I/O
 # Low noise log patterns
 console_log_pattern: "{({d(%H:%M:%S)} [{l}]):16.16} {m}{n}"
 logfile_log_pattern: "{({d(%Y-%m-%d %H:%M:%S)} [{l}]):26.26} {m}{n}"
+
+owner_address: "" # mining address
 
 # More detailed log patterns
 #console_log_pattern: "{d(%H:%M:%S.%3f%z)} [{h({l}):<5}] [{T}] [{t}] - {M}:{m}{n}"

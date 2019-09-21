@@ -38,7 +38,7 @@ pub struct Miner {
     request_handler: RequestHandler,
     rx_nonce_data: mpsc::Receiver<NonceData>,
     target_deadline: u64,
-    account_id_to_target_deadline: HashMap<u64, u64>,
+    account_id_to_target_deadline: HashMap<String, u64>,
     state: Arc<Mutex<State>>,
     reader_task_count: usize,
     get_mining_info_interval: u64,
@@ -51,7 +51,7 @@ pub struct State {
     generation_signature_bytes: [u8; 32],
     height: u64,
     block: u64,
-    account_id_to_best_deadline: HashMap<u64, u64>,
+    account_id_to_best_deadline: HashMap<String, u64>,
     server_target_deadline: u64,
     base_target: u64,
     sw: Stopwatch,
@@ -85,20 +85,20 @@ impl State {
         for best_deadlines in self.account_id_to_best_deadline.values_mut() {
             *best_deadlines = u64::MAX;
         }
-        self.height = mining_info.height;
+        self.height = mining_info.result.height;
         self.block += 1;
-        self.base_target = mining_info.base_target;
-        self.server_target_deadline = mining_info.target_deadline;
+        self.base_target = mining_info.result.base_target;
+        self.server_target_deadline = mining_info.result.target_deadline;
 
         self.generation_signature_bytes =
-            poc_hashing::decode_gensig(&mining_info.generation_signature);
-        self.generation_signature = mining_info.generation_signature.clone();
+            poc_hashing::decode_gensig(&mining_info.result.generation_signature);
+        self.generation_signature = mining_info.result.generation_signature.clone();
 
         let scoop =
-            poc_hashing::calculate_scoop(mining_info.height, &self.generation_signature_bytes);
+            poc_hashing::calculate_scoop(mining_info.result.height, &self.generation_signature_bytes);
         info!(
             "{: <80}",
-            format!("new block: height={}, scoop={}", mining_info.height, scoop)
+            format!("new block: height={}, scoop={}", mining_info.result.height, scoop)
         );
         self.scoop = scoop;
 
@@ -115,7 +115,7 @@ pub struct NonceData {
     pub deadline: u64,
     pub nonce: u64,
     pub reader_task_processed: bool,
-    pub account_id: u64,
+    pub address: String,
 }
 
 pub trait Buffer {
@@ -377,6 +377,7 @@ impl Miner {
 
         thread::spawn({
             create_cpu_worker_task(
+                cfg.owner_address.clone(),
                 cfg.benchmark_io(),
                 new_thread_pool(cpu_threads, cfg.cpu_thread_pinning),
                 rx_read_replies_cpu.clone(),
@@ -390,6 +391,7 @@ impl Miner {
             if cfg.gpu_async {
                 thread::spawn({
                     create_gpu_worker_task_async(
+                        cfg.owner_address.clone(),
                         cfg.benchmark_io(),
                         rx_read_replies_gpu[i].clone(),
                         tx_empty_buffers.clone(),
@@ -402,6 +404,7 @@ impl Miner {
                 #[cfg(feature = "opencl")]
                 thread::spawn({
                     create_gpu_worker_task(
+                        cfg.owner_address.clone(),
                         cfg.benchmark_io(),
                         rx_read_replies_gpu[i].clone(),
                         tx_empty_buffers.clone(),
@@ -417,9 +420,12 @@ impl Miner {
         #[cfg(not(feature = "opencl"))]
         let tx_read_replies_gpu = None;
 
+        info!("miner using rpc base uri: {}", cfg.url);
+
         Miner {
             reader_task_count: drive_id_to_plots.len(),
             reader: Reader::new(
+                cfg.owner_address.clone(),
                 drive_id_to_plots,
                 total_size,
                 reader_thread_count,
@@ -455,6 +461,7 @@ impl Miner {
     pub fn run(self) {
         let request_handler = self.request_handler.clone();
         let total_size = self.reader.total_size;
+        let owner_address = self.reader.address.clone();
 
         // TODO: this doesn't need to be arc mutex if we manage to separate
         // reader from miner so that we can simply move it
@@ -478,13 +485,13 @@ impl Miner {
                                     error!("{: <80}", "outage resolved.");
                                     state.outage = false;
                                 }
-                                if mining_info.generation_signature != state.generation_signature {
+                                if mining_info.result.generation_signature != state.generation_signature {
                                     state.update_mining_info(&mining_info);
 
                                     reader.lock().unwrap().start_reading(
-                                        mining_info.height,
+                                        mining_info.result.height,
                                         state.block,
-                                        mining_info.base_target,
+                                        mining_info.result.base_target,
                                         state.scoop,
                                         &Arc::new(state.generation_signature_bytes),
                                     );
@@ -537,27 +544,27 @@ impl Miner {
                     if state.height == nonce_data.height {
                         let best_deadline = *state
                             .account_id_to_best_deadline
-                            .get(&nonce_data.account_id)
+                            .get(&owner_address)
                             .unwrap_or(&u64::MAX);
                         if best_deadline > deadline
                             && deadline
                                 < min(
                                     state.server_target_deadline,
                                     *(account_id_to_target_deadline
-                                        .get(&nonce_data.account_id)
+                                        .get(&owner_address)
                                         .unwrap_or(&target_deadline)),
                                 )
                         {
                             state
                                 .account_id_to_best_deadline
-                                .insert(nonce_data.account_id, deadline);
+                                .insert(nonce_data.address, deadline);
                             request_handler.submit_nonce(
-                                nonce_data.account_id,
+                                owner_address.clone(),
+                                // nonce_data.account_id,
                                 nonce_data.nonce,
-                                nonce_data.height,
-                                nonce_data.block,
                                 nonce_data.deadline,
-                                deadline,
+                                nonce_data.height,
+                                // nonce_data.block,
                                 state.generation_signature_bytes,
                             );
                         }

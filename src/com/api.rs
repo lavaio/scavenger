@@ -3,15 +3,21 @@ use reqwest::r#async::Chunk;
 use serde::de::{self, DeserializeOwned};
 use std::fmt;
 
+//
+// address1
+// nonce
+// target deadline(v / baseTarget = deadline)
+// targetHeight
+#[derive(Debug, Clone, Serialize)]
+pub struct SubmitNonceParams(pub String, pub String, pub Option<u64>, pub u64);
+
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SubmitNonceRequest<'a> {
-    pub request_type: &'a str,
-    pub account_id: u64,
-    pub nonce: u64,
-    pub secret_phrase: Option<&'a String>,
-    pub blockheight: u64,
-    pub deadline: Option<u64>,
+pub struct SubmitNonceRequest {
+    pub jsonrpc: String,
+    pub id: String,
+    pub method: String,
+    pub params: Option<SubmitNonceParams>,
 }
 
 #[derive(Clone, Debug, Serialize)]
@@ -20,15 +26,27 @@ pub struct GetMiningInfoRequest<'a> {
     pub request_type: &'a str,
 }
 
-#[derive(Deserialize)]
+
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct SubmitNonceResponse {
-    pub deadline: u64,
+pub struct SubmitNonceResult {
+    pub accept: Option<bool>,
+    pub plotid: Option<u64>,
+    pub deadline: Option<u64>,
+    pub targetdeadline: Option<u64>,
 }
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MiningInfoResponse {
+pub struct SubmitNonceResponse {
+    pub result: SubmitNonceResult,
+    pub error: Option<String>,
+    pub id: String,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MiningInfoResult {
     pub generation_signature: String,
 
     #[serde(deserialize_with = "from_str_or_int")]
@@ -42,6 +60,14 @@ pub struct MiningInfoResponse {
         deserialize_with = "from_str_or_int"
     )]
     pub target_deadline: u64,
+}
+
+#[derive(Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MiningInfoResponse {
+    pub result: MiningInfoResult,
+    pub error: Option<String>,
+    pub id: String,
 }
 
 fn default_target_deadline() -> u64 {

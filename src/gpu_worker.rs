@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::u64;
 
 pub fn create_gpu_worker_task(
+    owner_address: String,
     benchmark: bool,
     rx_read_replies: Receiver<ReadReply>,
     tx_empty_buffers: Sender<Box<Buffer + Send>>,
@@ -32,7 +33,8 @@ pub fn create_gpu_worker_task(
                             deadline,
                             nonce: 0,
                             reader_task_processed: read_reply.info.finished,
-                            account_id: read_reply.info.account_id,
+                            address: owner_address.clone(),
+                            // address_id: read_reply.info.account_id,
                         })
                         .wait()
                         .expect("GPU worker failed to send nonce data");
@@ -70,7 +72,8 @@ pub fn create_gpu_worker_task(
                     deadline,
                     nonce: offset + read_reply.info.start_nonce,
                     reader_task_processed: read_reply.info.finished,
-                    account_id: read_reply.info.account_id,
+                    address: owner_address.clone(),
+                    // address_id: read_reply.info.account_id,
                 })
                 .wait()
                 .expect("GPU worker failed to cue empty buffer");

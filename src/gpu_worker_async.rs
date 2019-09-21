@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::u64;
 
 pub fn create_gpu_worker_task_async(
+    owner_address: String,
     benchmark: bool,
     rx_read_replies: Receiver<ReadReply>,
     tx_empty_buffers: Sender<Box<Buffer + Send>>,
@@ -49,7 +50,8 @@ pub fn create_gpu_worker_task_async(
                             deadline,
                             nonce: 0,
                             reader_task_processed: read_reply.info.finished,
-                            account_id: read_reply.info.account_id,
+                            address: owner_address.clone(),
+                            // account_id: read_reply.info.account_id,
                         })
                         .wait()
                         .expect("GPU async worker failed to send nonce data");
@@ -96,7 +98,8 @@ pub fn create_gpu_worker_task_async(
                             deadline,
                             nonce: offset + last_buffer_info_a.start_nonce,
                             reader_task_processed: last_buffer_info_a.finished,
-                            account_id: last_buffer_info_a.account_id,
+                            address: owner_address.clone(),
+                            // account_id: last_buffer_info_a.account_id,
                         })
                         .wait()
                         .expect("GPU async worker failed to send nonce data");
@@ -137,7 +140,8 @@ pub fn create_gpu_worker_task_async(
                         deadline,
                         nonce: offset + last_buffer_info_a.start_nonce,
                         reader_task_processed: last_buffer_info_a.finished,
-                        account_id: last_buffer_info_a.account_id,
+                        address: owner_address.clone(),
+                        // account_id: last_buffer_info_a.account_id,
                     })
                     .wait()
                     .expect("GPU async worker failed to cue empty buffer");

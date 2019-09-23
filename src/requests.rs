@@ -231,7 +231,7 @@ mod tests {
             rt.executor(),
         );
 
-        request_handler.submit_nonce(1337, 12, 111, 0, 7123, 1193, [0; 32]);
+        request_handler.submit_nonce("someaddress".to_string(), 12, 7123, 1193, [0; 32]);
 
         rt.shutdown_on_idle();
     }

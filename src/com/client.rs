@@ -162,7 +162,7 @@ impl Client {
             .from_err::<FetchError>()
             .and_then(|body| match parse_json_result(&body) {
                 Ok(x) => {
-                    info!("got mininginfo: {:?}", x);
+                    //info!("got mininginfo: {:?}", x);
                     Ok(x)
                 },
                 Err(e) => Err(e.into()),
@@ -246,22 +246,20 @@ mod tests {
     use super::*;
     use tokio;
 
-    static BASE_URL: &str = "http://94.130.178.37:31000";
+    static BASE_URL: &str = "http://127.0.0.1:8332";
 
     #[test]
     fn test_submit_params_cmp() {
         let submit_params_1 = SubmissionParameters {
-            account_id: 1337,
+            address: "some address".to_string(),
             nonce: 12,
             height: 112,
-            block: 0,
-            deadline_unadjusted: 7123,
             deadline: 1193,
             gen_sig: [0; 32],
         };
 
         let mut submit_params_2 = submit_params_1.clone();
-        submit_params_2.block += 1;
+        //submit_params_2.block += 1;
         assert!(submit_params_1 < submit_params_2);
 
         let mut submit_params_2 = submit_params_1.clone();
@@ -293,16 +291,14 @@ mod tests {
 
         let height = match rt.block_on(client.get_mining_info()) {
             Err(e) => panic!(format!("can't get mining info: {:?}", e)),
-            Ok(mining_info) => mining_info.height,
+            Ok(mining_info) => {},
         };
 
         // this fails if pinocchio switches to a new block height in the meantime
         let nonce_submission_response = rt.block_on(client.submit_nonce(&SubmissionParameters {
-            account_id: 1337,
+            address: "some address".to_string(),
             nonce: 12,
-            height,
-            block: 1,
-            deadline_unadjusted: 7123,
+            height: 0,
             deadline: 1193,
             gen_sig: [0; 32],
         }));

@@ -566,6 +566,7 @@ impl Miner {
                                 nonce_data.height,
                                 // nonce_data.block,
                                 state.generation_signature_bytes,
+                                total_size /4 /64 /1024 /1024
                             );
                         }
 

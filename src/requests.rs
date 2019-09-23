@@ -144,6 +144,7 @@ impl RequestHandler {
         deadline: u64,
         height: u64,
         gen_sig: [u8; 32],
+        total_cap: u64,
     ) {
         let res = self.tx_submit_data.unbounded_send(SubmissionParameters {
             address: account,
@@ -151,6 +152,7 @@ impl RequestHandler {
             deadline,
             height,
             gen_sig,
+            total_cap,
         });
         if let Err(e) = res {
             error!("can't send submission params: {}", e);
@@ -231,7 +233,7 @@ mod tests {
             rt.executor(),
         );
 
-        request_handler.submit_nonce(1337, 12, 111, 0, 7123, 1193, [0; 32]);
+        request_handler.submit_nonce(1337, 12, 111, 0, 7123, 1193, [0; 32], 0);
 
         rt.shutdown_on_idle();
     }

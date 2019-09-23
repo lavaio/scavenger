@@ -9,7 +9,7 @@ use std::fmt;
 // target deadline(v / baseTarget = deadline)
 // targetHeight
 #[derive(Debug, Clone, Serialize)]
-pub struct SubmitNonceParams(pub String, pub String, pub Option<u64>, pub u64);
+pub struct SubmitNonceParams(pub String, pub String, pub Option<u64>, pub u64, pub u64);
 
 #[derive(Clone, Debug, Serialize)]
 #[serde(rename_all = "camelCase")]

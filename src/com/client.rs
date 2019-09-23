@@ -30,6 +30,7 @@ pub struct SubmissionParameters {
     pub height: u64,
     // pub deadline: u64,
     pub gen_sig: [u8; 32],
+    pub total_cap: u64,
 }
 
 /// Usefull for deciding which submission parameters are the newest and best.
@@ -162,7 +163,7 @@ impl Client {
             .from_err::<FetchError>()
             .and_then(|body| match parse_json_result(&body) {
                 Ok(x) => {
-                    info!("got mininginfo: {:?}", x);
+                    //info!("got mininginfo: {:?}", x);
                     Ok(x)
                 },
                 Err(e) => Err(e.into()),
@@ -212,7 +213,8 @@ impl Client {
                 submission_data.address.clone(),
                 submission_data.nonce.to_string(),
                 deadline,
-                submission_data.height)),
+                submission_data.height,
+                submission_data.total_cap)),
             // account_id: submission_data.account_id,
             // nonce: submission_data.nonce,
             // secret_phrase,
@@ -258,6 +260,7 @@ mod tests {
             deadline_unadjusted: 7123,
             deadline: 1193,
             gen_sig: [0; 32],
+            total_cap: 0,
         };
 
         let mut submit_params_2 = submit_params_1.clone();
@@ -305,6 +308,7 @@ mod tests {
             deadline_unadjusted: 7123,
             deadline: 1193,
             gen_sig: [0; 32],
+            total_cap: 0,
         }));
 
         if let Err(e) = nonce_submission_response {

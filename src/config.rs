@@ -84,6 +84,12 @@ pub struct Cfg {
     #[serde(default = "default_additional_headers")]
     pub additional_headers: HashMap<String, String>,
 
+    #[serde(default = "default_rpc_user")]
+    pub rpc_user: String,
+
+    #[serde(default = "default_rpc_password")]
+    pub rpc_password: String,
+
     #[serde(default = "default_console_log_level")]
     pub console_log_level: String,
 
@@ -207,6 +213,14 @@ fn default_send_proxy_details() -> bool {
 
 fn default_additional_headers() -> HashMap<String, String> {
     HashMap::new()
+}
+
+fn default_rpc_user() -> String {
+    "test".to_string()
+}
+
+fn default_rpc_password() -> String {
+    "test".to_string()
 }
 
 fn default_console_log_level() -> String {

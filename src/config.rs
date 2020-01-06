@@ -15,7 +15,7 @@ pub enum Benchmark {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Cfg {
     #[serde(default = "default_secret_phrase")]
-    pub account_id_to_secret_phrase: HashMap<u64, String>,
+    pub account_id_to_secret_phrase: HashMap<String, String>,
 
     pub owner_address: String,
 
@@ -131,7 +131,7 @@ impl<'de> Deserialize<'de> for Benchmark {
     }
 }
 
-fn default_secret_phrase() -> HashMap<u64, String> {
+fn default_secret_phrase() -> HashMap<String, String> {
     HashMap::new()
 }
 

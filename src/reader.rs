@@ -20,7 +20,7 @@ pub struct BufferInfo {
     pub gensig: Arc<[u8; 32]>,
     pub start_nonce: u64,
     pub finished: bool,
-    pub account_id: u64,
+    pub account_id: String,
     // pub address: String,
     pub gpu_signal: u64,
 }
@@ -111,7 +111,7 @@ impl Reader {
                         gensig: gensig.clone(),
                         start_nonce: 0,
                         finished: false,
-                        account_id: 0,
+                        account_id: "".to_string(),
                         gpu_signal: 1,
                     },
                 })
@@ -244,7 +244,7 @@ impl Reader {
                                         gensig: gensig.clone(),
                                         start_nonce,
                                         finished,
-                                        account_id: p.meta.account_id,
+                                        account_id: p.meta.account_id.clone(),
                                         gpu_signal: 0,
                                     },
                                 })
@@ -262,7 +262,7 @@ impl Reader {
                                         gensig: gensig.clone(),
                                         start_nonce,
                                         finished,
-                                        account_id: p.meta.account_id,
+                                        account_id: p.meta.account_id.clone(),
                                         gpu_signal: 0,
                                     },
                                 })
@@ -281,7 +281,7 @@ impl Reader {
                                 gensig: gensig.clone(),
                                 start_nonce,
                                 finished,
-                                account_id: p.meta.account_id,
+                                account_id: p.meta.account_id.clone(),
                                 gpu_signal: 0,
                             },
                         })
@@ -316,7 +316,7 @@ impl Reader {
                                         gensig: gensig.clone(),
                                         start_nonce: 0,
                                         finished: false,
-                                        account_id: 0,
+                                        account_id: "".to_string(),
                                         gpu_signal: 2,
                                     },
                                 })

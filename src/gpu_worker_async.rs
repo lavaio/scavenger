@@ -28,7 +28,7 @@ pub fn create_gpu_worker_task_async(
             gensig: Arc::new([0u8; 32]),
             start_nonce: 0,
             finished: false,
-            account_id: 0,
+            account_id: "".to_string(),
             gpu_signal: 0,
         };
         let mut drive_count = 0;

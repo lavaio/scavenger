@@ -21,7 +21,7 @@ pub struct RequestHandler {
 impl RequestHandler {
     pub fn new(
         base_uri: Url,
-        secret_phrases: HashMap<u64, String>,
+        secret_phrases: HashMap<String, String>,
         timeout: u64,
         total_size_gb: usize,
         send_proxy_details: bool,

@@ -16,7 +16,7 @@ use base64;
 #[derive(Clone, Debug)]
 pub struct Client {
     inner: InnerClient,
-    account_id_to_secret_phrase: Arc<HashMap<u64, String>>,
+    account_id_to_secret_phrase: Arc<HashMap<String, String>>,
     base_uri: Url,
     total_size_gb: usize,
     headers: Arc<HeaderMap>,
@@ -121,7 +121,7 @@ impl Client {
     /// Create a new client communicating with Pool/Proxy/Wallet.
     pub fn new(
         base_uri: Url,
-        mut secret_phrases: HashMap<u64, String>,
+        mut secret_phrases: HashMap<String, String>,
         timeout: u64,
         total_size_gb: usize,
         proxy_details: ProxyDetails,

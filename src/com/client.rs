@@ -10,12 +10,13 @@ use std::sync::Arc;
 use std::time::Duration;
 use url::form_urlencoded::byte_serialize;
 use url::Url;
+use base64;
 
 /// A client for communicating with Pool/Proxy/Wallet.
 #[derive(Clone, Debug)]
 pub struct Client {
     inner: InnerClient,
-    account_id_to_secret_phrase: Arc<HashMap<u64, String>>,
+    account_id_to_secret_phrase: Arc<HashMap<String, String>>,
     base_uri: Url,
     total_size_gb: usize,
     headers: Arc<HeaderMap>,
@@ -81,13 +82,17 @@ impl Client {
         proxy_details: ProxyDetails,
         total_size_gb: usize,
         additional_headers: HashMap<String, String>,
+        rpc_info: (String, String)
     ) -> HeaderMap {
         let ua = Client::ua();
         let mut headers = HeaderMap::new();
+        let (user, password) = rpc_info;
+        let auth = format!("{}:{}", user, password);
+        let auth_header = format!("Basic {}", base64::encode(&auth));
         headers.insert("User-Agent", ua.to_owned().parse().unwrap());
         if proxy_details == ProxyDetails::Enabled {
             // It's amazing how a user agent is just not enough.
-            headers.insert("Authorization", "Basic dGVzdDp0ZXN0".parse().unwrap());
+            headers.insert("Authorization", auth_header.parse().unwrap());
             headers.insert("X-Capacity", total_size_gb.to_string().parse().unwrap());
             headers.insert("X-Miner", ua.to_owned().parse().unwrap());
             headers.insert(
@@ -117,18 +122,19 @@ impl Client {
     /// Create a new client communicating with Pool/Proxy/Wallet.
     pub fn new(
         base_uri: Url,
-        mut secret_phrases: HashMap<u64, String>,
+        mut secret_phrases: HashMap<String, String>,
         timeout: u64,
         total_size_gb: usize,
         proxy_details: ProxyDetails,
         additional_headers: HashMap<String, String>,
+        rpc_info: (String, String)
     ) -> Self {
         for secret_phrase in secret_phrases.values_mut() {
             *secret_phrase = byte_serialize(secret_phrase.as_bytes()).collect();
         }
 
         let headers =
-            Client::submit_nonce_headers(proxy_details, total_size_gb, additional_headers);
+            Client::submit_nonce_headers(proxy_details, total_size_gb, additional_headers, rpc_info);
 
         let client = ClientBuilder::new()
             .timeout(Duration::from_millis(timeout))
@@ -248,23 +254,21 @@ mod tests {
     use super::*;
     use tokio;
 
-    static BASE_URL: &str = "http://94.130.178.37:31000";
+    static BASE_URL: &str = "http://127.0.0.1:8332";
 
     #[test]
     fn test_submit_params_cmp() {
         let submit_params_1 = SubmissionParameters {
-            account_id: 1337,
+            address: "some address".to_string(),
             nonce: 12,
             height: 112,
-            block: 0,
-            deadline_unadjusted: 7123,
             deadline: 1193,
             gen_sig: [0; 32],
             total_cap: 0,
         };
 
         let mut submit_params_2 = submit_params_1.clone();
-        submit_params_2.block += 1;
+        //submit_params_2.block += 1;
         assert!(submit_params_1 < submit_params_2);
 
         let mut submit_params_2 = submit_params_1.clone();
@@ -292,20 +296,19 @@ mod tests {
             12,
             ProxyDetails::Enabled,
             HashMap::new(),
+            ("test".to_string(), "test".to_string())
         );
 
         let height = match rt.block_on(client.get_mining_info()) {
             Err(e) => panic!(format!("can't get mining info: {:?}", e)),
-            Ok(mining_info) => mining_info.height,
+            Ok(mining_info) => {},
         };
 
         // this fails if pinocchio switches to a new block height in the meantime
         let nonce_submission_response = rt.block_on(client.submit_nonce(&SubmissionParameters {
-            account_id: 1337,
+            address: "some address".to_string(),
             nonce: 12,
-            height,
-            block: 1,
-            deadline_unadjusted: 7123,
+            height: 0,
             deadline: 1193,
             gen_sig: [0; 32],
             total_cap: 0,

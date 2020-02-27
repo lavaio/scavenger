@@ -15,7 +15,7 @@ pub enum Benchmark {
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Cfg {
     #[serde(default = "default_secret_phrase")]
-    pub account_id_to_secret_phrase: HashMap<u64, String>,
+    pub account_id_to_secret_phrase: HashMap<String, String>,
 
     pub owner_address: String,
 
@@ -84,6 +84,12 @@ pub struct Cfg {
     #[serde(default = "default_additional_headers")]
     pub additional_headers: HashMap<String, String>,
 
+    #[serde(default = "default_rpc_user")]
+    pub rpc_user: String,
+
+    #[serde(default = "default_rpc_password")]
+    pub rpc_password: String,
+
     #[serde(default = "default_console_log_level")]
     pub console_log_level: String,
 
@@ -125,7 +131,7 @@ impl<'de> Deserialize<'de> for Benchmark {
     }
 }
 
-fn default_secret_phrase() -> HashMap<u64, String> {
+fn default_secret_phrase() -> HashMap<String, String> {
     HashMap::new()
 }
 
@@ -207,6 +213,14 @@ fn default_send_proxy_details() -> bool {
 
 fn default_additional_headers() -> HashMap<String, String> {
     HashMap::new()
+}
+
+fn default_rpc_user() -> String {
+    "test".to_string()
+}
+
+fn default_rpc_password() -> String {
+    "test".to_string()
 }
 
 fn default_console_log_level() -> String {

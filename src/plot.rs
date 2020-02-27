@@ -15,7 +15,7 @@ const NONCE_SIZE: u64 = SCOOP_SIZE * SCOOPS_IN_NONCE;
 
 #[derive(Clone)]
 pub struct Meta {
-    pub account_id: u64,
+    pub account_id: String,
     pub start_nonce: u64,
     pub nonces: u64,
     pub name: String,
@@ -108,7 +108,7 @@ impl Plot {
             return Err(From::from("plot file has wrong format"));
         }
 
-        let account_id = parts[0].parse::<u64>()?;
+        let account_id = parts[0].to_string();
         let start_nonce = parts[1].parse::<u64>()?;
         let nonces = parts[2].parse::<u64>()?;
 

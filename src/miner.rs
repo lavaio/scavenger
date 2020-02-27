@@ -449,6 +449,7 @@ impl Miner {
                 cfg.send_proxy_details,
                 cfg.additional_headers,
                 executor.clone(),
+                (cfg.rpc_user, cfg.rpc_password)
             ),
             state: Arc::new(Mutex::new(State::new())),
             // floor at 1s to protect servers

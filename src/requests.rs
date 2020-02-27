@@ -21,12 +21,13 @@ pub struct RequestHandler {
 impl RequestHandler {
     pub fn new(
         base_uri: Url,
-        secret_phrases: HashMap<u64, String>,
+        secret_phrases: HashMap<String, String>,
         timeout: u64,
         total_size_gb: usize,
         send_proxy_details: bool,
         additional_headers: HashMap<String, String>,
         executor: TaskExecutor,
+        rpc_info: (String, String)
     ) -> RequestHandler {
         // TODO
         let proxy_details = if send_proxy_details {
@@ -42,6 +43,7 @@ impl RequestHandler {
             total_size_gb,
             proxy_details,
             additional_headers,
+            rpc_info
         );
 
         let (tx_submit_data, rx_submit_nonce_data) = mpsc::unbounded();
@@ -231,10 +233,10 @@ mod tests {
             true,
             HashMap::new(),
             rt.executor(),
+            ("test".to_string(), "test".to_string())
         );
 
-        request_handler.submit_nonce(1337, 12, 111, 0, 7123, 1193, [0; 32], 0);
-
+        request_handler.submit_nonce("someaddress".to_string(), 12, 7123, 1193, [0; 32], 0);
         rt.shutdown_on_idle();
     }
 }

@@ -97,7 +97,7 @@ cfg_if! {
 }
 
 fn main() {
-    let arg = App::new("Scavenger - a PoC miner")
+    let arg = App::new("Scavenger - a PoC2+ miner")
         .version(crate_version!())
         .author(crate_authors!())
         .about(crate_description!())

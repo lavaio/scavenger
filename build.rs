@@ -12,6 +12,7 @@ fn main() {
         .flag("/Ot")
         .flag("/Oy")
         .flag("/GT")
+        .flag("/MT")
         .flag("/GL");
 
     #[cfg(not(target_env = "msvc"))]

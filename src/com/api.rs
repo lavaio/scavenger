@@ -31,7 +31,7 @@ pub struct GetMiningInfoRequest<'a> {
 #[serde(rename_all = "camelCase")]
 pub struct SubmitNonceResult {
     pub accept: Option<bool>,
-    pub plotid: Option<u64>,
+    pub plotid: Option<String>,
     pub deadline: Option<u64>,
     pub targetdeadline: Option<u64>,
 }
